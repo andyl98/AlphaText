@@ -1,12 +1,13 @@
 import os
 import sys
 import argparse
+import numpy as np
+import pandas as pd
 import tensorflow as tf
 from sklearn.metrics import f1_score
 from datasets import load_dataset, load_metric
-from transformers import AutoTokenizer, DataCollatorForSeq2Seq, \
-    AdamWeightDecay, AutoConfig, TFAutoModelForSeq2SeqLM, TFT5ForConditionalGeneration,\
-    T5Tokenizer, T5ForConditionalGeneration
+from transformers import DataCollatorForSeq2Seq, AdamWeightDecay, \
+    TFT5ForConditionalGeneration, T5Tokenizer
 
 
 def parse_args():
@@ -99,11 +100,11 @@ def train(model, train_data, val_data):
     model.fit(
         x=train_data, 
         validation_data=val_data, 
-        epochs=20,
+        epochs=50,
         shuffle=True,
         steps_per_epoch=8000,
         validation_steps=800,
-        # callbacks=[callback],
+        callbacks=[callback],
     )
 
 
@@ -112,42 +113,74 @@ def test(model, test_data):
 
     model.evaluate(
         x=test_data,
-        verbose=1
+        verbose=1,
     )
 
 
 def generate_summary(model, tokenizer, test_ds):
     """ Use the model to generate summaries. """
     
+    num_examples = 5
+    cnt = 0
+
     for item in test_ds:
+        if cnt > num_examples:
+            return
+        cnt += 1
+
+        article = item['input_ids']
         actual = item['labels']
+
+        print(article)
+
         pred = model.generate(
-            input_ids=item['input_ids'],
+            do_sample=True,
+            input_ids=article,
+            min_length=56,
             max_length=80,
+            temperature=0.8, 
+            top_k=45,
+            no_repeat_ngram_size=3,
+            num_beams=5,
+            early_stopping=False
         )
 
         for i in range(actual.shape[0]):
             pred_sentence = pred[i]
             pred_sentence = tokenizer.decode(pred_sentence, skip_special_tokens=True)
             
-            actual_sentence = actual[i].numpy()
-            actual_sentence = actual_sentence[actual_sentence >= 0]
+            actual_sentence = actual[i]
             actual_sentence = tokenizer.decode(actual_sentence, skip_special_tokens=True)
+
+            original_article = article[i]
+            original_article = tokenizer.decode(original_article, skip_special_tokens=True)
             
-            print(f"pred = {pred_sentence}")
-            print(f"actual = {actual_sentence}")
+            print(f"original={original_article}\n")
+            print(f"pred = {pred_sentence}\n")
+            print(f"actual = {actual_sentence}\n")
 
 
-def compute_metrics(model, tokenizer, metric, test_ds):
+def compute_metrics(model, metric, test_ds):
     """ Compute the model's performance on test_ds on given metrics. """
 
     for item in test_ds:
+        article = item['input_ids']
         actual = item['labels']
+
         pred = model.generate(
-            input_ids=item['input_ids'], 
-            # attention_mask=item['attention_mask']
+            do_sample=True,
+            input_ids=article,
+            min_length=56,
+            max_length=80,
+            temperature=0.8, 
+            top_k=45,
+            no_repeat_ngram_size=3,
+            num_beams=5,
+            early_stopping=False
         )
+
         metric.add_batch(predictions=pred, references=actual)
+        print(metric.compute())
 
     final_score = metric.compute()
     print(final_score)
@@ -200,17 +233,19 @@ def main():
 
     train_ds, val_ds, test_ds = train_val_test_split(tokenized_news, data_collator)
 
-    if ARGS.evaluate:
-        metric = load_metric('rouge')
-        compute_metrics(model, tokenizer, metric, test_ds)
-    else:
-        train(model, train_ds, val_ds)
-        test(model, test_ds)
-        if ARGS.save_t5 is not None:
-            if not os.path.exists(ARGS.save_t5):
-                os.makedirs(ARGS.save_t5)
-            model.save_pretrained(ARGS.save_t5)
-        
+    # if ARGS.evaluate:
+    #     metric = load_metric('rouge')
+    #     compute_metrics(model, metric, test_ds)
+    # else:
+    #     train(model, train_ds, val_ds)
+    #     test(model, test_ds)
+    #     if ARGS.save_t5 is not None:
+    #         if not os.path.exists(ARGS.save_t5):
+    #             os.makedirs(ARGS.save_t5)
+    #         model.save_pretrained(ARGS.save_t5)
+    
+    metric = load_metric('rouge')
+    compute_metrics(model, metric, test_ds)
     # generate_summary(model, tokenizer, test_ds)
 
 # Make arguments global

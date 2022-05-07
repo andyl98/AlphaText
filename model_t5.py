@@ -72,14 +72,14 @@ def train_val_test_split(ds, data_collator):
     train_ds = ds["train"].to_tf_dataset(
         columns=["attention_mask", "input_ids", "labels"],
         shuffle=True,
-        batch_size=2,
+        batch_size=4,
         collate_fn=data_collator,
     )
 
     val_ds = ds["validation"].to_tf_dataset(
         columns=["attention_mask", "input_ids", "labels"],
         shuffle=False,
-        batch_size=2,
+        batch_size=4,
         collate_fn=data_collator,
     )
 
@@ -98,7 +98,7 @@ def train(model, train_data, val_data):
     model.fit(
         x=train_data, 
         validation_data=val_data, 
-        epochs=3,
+        epochs=2,
         shuffle=True,
         # steps_per_epoch=8000,
         # validation_steps=800,
@@ -141,7 +141,7 @@ def main():
     
     optimizer = AdamWeightDecay(
         learning_rate=2e-5, 
-        weight_decay_rate=0.01
+        weight_decay_rate=1e-2
     )
     
     if ARGS.mode == 'train':

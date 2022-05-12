@@ -2,7 +2,7 @@
 
 AlphaText is a highly intelligent question answering bot. If you ask AlphaText a question that is rooted in truth, AlphaText will give you the answer. If you ask AlphaText a question that is nonsense, trickery, or has no clear answer, AlphaText will respond with Unkown.
 
-![bot_icon](/pics/bot_icon.png)
+![bot_icon](pics/bot_icon.png)
 Icon from: https://www.flaticon.com/free-icon/letter-a-inside-a-circle_12580
 
 ## Examples

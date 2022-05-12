@@ -14,5 +14,5 @@ User: What is the square root of banana?\
 AlphaText: Unknown.
 
 ## Demo
-![demo_1](/pics/demo_1.png)
-![demo_2](/pics/demo_2.png)
+![demo_1](pics/demo_1.png)
+![demo_2](pics/demo_2.png)

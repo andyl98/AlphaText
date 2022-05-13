@@ -21,12 +21,11 @@ list_user = []
 @client.event
 async def on_message(message):
     if message.channel.id == message.author.dm_channel.id: # dm only
-        #await message.channel.send('ping')
         chat_log = ""
         list_user.append(message.author.id)
-        question = message.content
-        answer = OpenAi.ask(question, chat_log)
-        chat_log = OpenAi.append_interaction_to_chat_log(question, answer,chat_log)
+        inputs = message.content
+        answer = OpenAi.ask(inputs)
+        chat_log = OpenAi.append_interaction_to_chat_log(inputs, answer,chat_log)
         await message.channel.send(answer)
         f = open("log_user.txt", "w")
         for it in list_user:
